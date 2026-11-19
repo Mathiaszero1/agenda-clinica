@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0f6b64">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Agenda">
+<meta name="robots" content="noindex, nofollow">
+<title>Agenda Dr. Orestes Polo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: app de celular. Cabeçalho, navegação da semana, faixa dos dias, filtros e linha do tempo do dia em manhã e tarde. */
+:root {
+  --bg: #f4f6f5;
+  --surface: #ffffff;
+  --fg: #16211f;
+  --muted: #5d6b68;
+  --line: #dbe2e0;
+  --surg: #6b2d5c; --surg-soft: #f1e4ee;
+  --cons: #0f6b64; --cons-soft: #dcf0ed;
+  --ret: #8a5a00; --ret-soft: #f6ead0;
+  --proc: #2f5f9e; --proc-soft: #dfe9f6;
+  --cancel: #b5321f; --cancel-soft: #fbe3de;
+  --now: #16211f;
+  --now-fg: #f4f6f5;
+  --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1615; --surface: #172220; --fg: #e8efed; --muted: #97a8a4; --line: #27373a;
+    --surg: #e2a6d3; --surg-soft: #3a2236; --cons: #7fd6cc; --cons-soft: #153835;
+    --ret: #e6bd6b; --ret-soft: #3a2f14; --proc: #9dbff0; --proc-soft: #1c2c46;
+    --cancel: #ff8f7a; --cancel-soft: #43211c;
+    --now: #e8efed; --now-fg: #0f1615;
+  }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.45;
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.app { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cons); outline-offset: 2px; }
+
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; }
+.datehead { font-family: var(--font-display); font-weight: 500; font-size: 18px; color: var(--muted); }
+header { display: flex; flex-direction: column; gap: 4px; }
+.topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.link { background: none; border: 0; padding: 4px 0; color: var(--muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Login */
+.login { display: flex; flex-direction: column; gap: 18px; padding-top: 12vh; }
+.login p { margin: 0; color: var(--muted); max-width: 38ch; }
+#gsi-botao { min-height: 44px; }
+.msg { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; background: var(--surface); }
+.msg.erro { border-color: var(--cancel); color: var(--cancel); background: var(--cancel-soft); }
+
+/* Semana */
+.semana-nav { display: flex; align-items: center; gap: 8px; }
+.semana-nav .rotulo { flex: 1; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.icone { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 20px; line-height: 1; }
+.hoje { height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 12px; font-size: 14px; font-weight: 500; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.day {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 0; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0;
+}
+.day .dow { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.day .num { font-family: var(--font-display); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+.day .dots { display: flex; gap: 3px; height: 6px; margin-top: 2px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; }
+.dot.s { background: var(--surg); } .dot.c { background: var(--cons); } .dot.r { background: var(--ret); } .dot.p { background: var(--proc); }
+.day[aria-pressed="true"] { background: var(--now); color: var(--now-fg); border-color: var(--now); }
+.day[aria-pressed="true"] .dow { color: var(--now-fg); opacity: .75; }
+.day[aria-pressed="true"] .dot.s { background: var(--surg-soft); } .day[aria-pressed="true"] .dot.c { background: var(--cons-soft); }
+.day[aria-pressed="true"] .dot.r { background: var(--ret-soft); } .day[aria-pressed="true"] .dot.p { background: var(--proc-soft); }
+.day.today:not([aria-pressed="true"]) .num { text-decoration: underline; text-underline-offset: 3px; }
+
+.bar { display: flex; flex-direction: column; gap: 8px; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.banner { border: 1px dashed var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+
+/* Linha do tempo */
+.turnos { display: flex; flex-direction: column; gap: 18px; }
+.turno h2 {
+  margin: 0 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  font-weight: 600; display: flex; align-items: center; gap: 10px;
+}
+.turno h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.item { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; }
+.item.nohora { grid-template-columns: minmax(0, 1fr); }
+.time { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 15px; padding-top: 14px; }
+.time .none { color: var(--muted); font-weight: 400; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.head {
+  background: none; border: 0; text-align: left; width: 100%; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pill { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; border-radius: 999px; padding: 2px 9px; }
+.pill.s { background: var(--surg-soft); color: var(--surg); }
+.pill.c { background: var(--cons-soft); color: var(--cons); }
+.pill.r { background: var(--ret-soft); color: var(--ret); }
+.pill.p { background: var(--proc-soft); color: var(--proc); }
+.pill.o { background: var(--line); color: var(--muted); }
+.pill.x { background: var(--cancel-soft); color: var(--cancel); }
+.tag { font-size: 11px; font-weight: 600; background: var(--now); color: var(--now-fg); border-radius: 999px; padding: 2px 9px; }
+.patient { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.what { color: var(--muted); overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; }
+.room, .city, .mod { border: 1px solid var(--line); border-radius: 6px; padding: 1px 8px; font-weight: 600; }
+.room { font-variant-numeric: tabular-nums; }
+.city, .mod { font-weight: 500; color: var(--muted); }
+.note { font-size: 12px; color: var(--muted); background: var(--bg); border-radius: 6px; padding: 1px 8px; }
+.ok { color: var(--cons); font-weight: 600; }
+.tbc { color: var(--ret); font-weight: 600; }
+.more { display: none; border-top: 1px solid var(--line); margin: 0 14px; padding: 10px 0 12px; font-size: 14px; color: var(--muted); gap: 6px; flex-direction: column; }
+.card.open .more { display: flex; }
+.more b { color: var(--fg); font-weight: 600; }
+.more code { font-size: 12px; overflow-wrap: anywhere; background: var(--bg); border-radius: 6px; padding: 4px 8px; color: var(--fg); }
+.warn { color: var(--ret); font-size: 13px; }
+.small-btn { align-self: flex-start; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 500; }
+.phone { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.why { border-top: 1px solid var(--line); margin: 0 14px; padding: 10px 0 12px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 14px; }
+.why .reason { color: var(--cancel); font-weight: 500; }
+.card.canceled { border-color: var(--cancel); background: color-mix(in srgb, var(--cancel-soft) 55%, var(--surface)); }
+.card.canceled .patient { text-decoration: line-through; text-decoration-thickness: 1px; }
+.item.past .card { opacity: .55; }
+.item.next .card { border-color: var(--fg); border-width: 2px; }
+.empty { border: 1px dashed var(--line); border-radius: 12px; padding: 24px 16px; text-align: center; color: var(--muted); }
+
+.foot { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+.foot .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+@media (prefers-reduced-motion: no-preference) { .card, .day, .chip { transition: background-color .15s, border-color .15s; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <section id="login" class="login" hidden>
+    <div>
+      <span class="eyebrow">Agenda da clínica</span>
+      <h1>Dr. Orestes Polo</h1>
+    </div>
+    <p>Entre com a sua conta Google para ver cirurgias, consultas e retornos.</p>
+    <div id="gsi-botao"></div>
+    <div id="login-msg" class="msg" hidden></div>
+  </section>
+
+  <section id="principal" hidden>
+    <div class="app">
+      <header>
+        <div class="topo">
+          <span class="eyebrow">Agenda da clínica</span>
+          <button id="sair" class="link" type="button">Sair</button>
+        </div>
+        <h1>Dr. Orestes Polo</h1>
+        <span class="datehead" id="datehead"></span>
+      </header>
+
+      <div class="semana-nav">
+        <button id="ant" class="icone" type="button" aria-label="Semana anterior">‹</button>
+        <span class="rotulo" id="semana-rotulo"></span>
+        <button id="hoje" class="hoje" type="button">Hoje</button>
+        <button id="prox" class="icone" type="button" aria-label="Próxima semana">›</button>
+      </div>
+
+      <nav class="week" id="week" aria-label="Dias da semana"></nav>
+
+      <div class="bar">
+        <div class="filters" id="filters" role="group" aria-label="Filtrar por tipo">
+          <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+          <button class="chip" data-f="s" aria-pressed="false">Cirurgias</button>
+          <button class="chip" data-f="c" aria-pressed="false">Consultas</button>
+          <button class="chip" data-f="r" aria-pressed="false">Retornos</button>
+          <button class="chip" data-f="p" aria-pressed="false">Procedimentos</button>
+        </div>
+        <span class="count" id="count"></span>
+      </div>
+
+      <div id="status" class="msg" hidden></div>
+      <div id="avisos"></div>
+      <div class="turnos" id="list"></div>
+
+      <footer class="foot">
+        <div class="row">
+          <span id="quem"></span>
+          <button id="atualizar" class="link" type="button">Atualizar agora</button>
+        </div>
+        <span id="atualizado"></span>
+      </footer>
+    </div>
+  </section>
+
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>
