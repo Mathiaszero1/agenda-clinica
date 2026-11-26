@@ -1,7 +1,7 @@
 // Guarda só os arquivos do app, para ele abrir rápido. Nenhum dado de paciente passa por aqui:
 // pedidos a outros endereços (servidor da agenda, login do Google) nunca são interceptados nem guardados.
-var CACHE = 'agenda-v1';
-var ARQUIVOS = ['./', 'index.html', 'app.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+var CACHE = 'agenda-v5';
+var ARQUIVOS = ['./', 'index.html', 'app.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'login-logo.png', 'login-logo-claro.png'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ARQUIVOS); }).then(function () { return self.skipWaiting(); }));

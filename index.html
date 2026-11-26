@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#0f6b64">
+<meta name="theme-color" content="#f6f4fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14101e" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Agenda">
 <meta name="robots" content="noindex, nofollow">
@@ -12,32 +13,34 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=Montserrat:wght@300;400;500&display=swap">
 <style>
 /* Layout: app de celular. Cabeçalho, navegação da semana, faixa dos dias, filtros e linha do tempo do dia em manhã e tarde. */
 :root {
-  --bg: #f4f6f5;
+  --bg: #f6f4fa;
   --surface: #ffffff;
-  --fg: #16211f;
-  --muted: #5d6b68;
-  --line: #dbe2e0;
-  --surg: #6b2d5c; --surg-soft: #f1e4ee;
-  --cons: #0f6b64; --cons-soft: #dcf0ed;
-  --ret: #8a5a00; --ret-soft: #f6ead0;
-  --proc: #2f5f9e; --proc-soft: #dfe9f6;
-  --cancel: #b5321f; --cancel-soft: #fbe3de;
-  --now: #16211f;
-  --now-fg: #f4f6f5;
-  --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+  --fg: #1f1a2b;
+  --muted: #6e6780;
+  --line: #e3deee;
+  --brand: #6d3fb5; --brand-fg: #ffffff; --brand-soft: #ece5f8;
+  --surg: #6d3fb5; --surg-soft: #ece5f8;
+  --cons: #2f7d5b; --cons-soft: #e1f1ea;
+  --ret: #9a6a14; --ret-soft: #f6ebd3;
+  --proc: #3a69ad; --proc-soft: #e1eaf6;
+  --cancel: #d03a27; --cancel-soft: #fde7e3;
+  --now: #6d3fb5;
+  --now-fg: #ffffff;
+  --font-display: "Montserrat", "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1615; --surface: #172220; --fg: #e8efed; --muted: #97a8a4; --line: #27373a;
-    --surg: #e2a6d3; --surg-soft: #3a2236; --cons: #7fd6cc; --cons-soft: #153835;
-    --ret: #e6bd6b; --ret-soft: #3a2f14; --proc: #9dbff0; --proc-soft: #1c2c46;
+    --bg: #14101e; --surface: #1d1830; --fg: #efeaf8; --muted: #a79fbf; --line: #30274a;
+    --brand: #a67ae9; --brand-fg: #14101e; --brand-soft: #2c2249;
+    --surg: #b79af0; --surg-soft: #2c2249; --cons: #7fcfa6; --cons-soft: #1b3329;
+    --ret: #e5bd78; --ret-soft: #3a2f16; --proc: #8fb4ee; --proc-soft: #1d2d49;
     --cancel: #ff8f7a; --cancel-soft: #43211c;
-    --now: #e8efed; --now-fg: #0f1615;
+    --now: #a67ae9; --now-fg: #14101e;
   }
 }
 * { box-sizing: border-box; }
@@ -53,19 +56,28 @@ body {
 .app { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 [hidden] { display: none !important; }
 button { font: inherit; color: inherit; cursor: pointer; }
-button:focus-visible, a:focus-visible { outline: 2px solid var(--cons); outline-offset: 2px; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-h1 { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; }
+.eyebrow { font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--brand); font-weight: 500; font-family: var(--font-display); }
+h1 { font-family: var(--font-display); font-weight: 300; font-size: 30px; line-height: 1.1; margin: 0; text-wrap: balance; }
 .datehead { font-family: var(--font-display); font-weight: 500; font-size: 18px; color: var(--muted); }
 header { display: flex; flex-direction: column; gap: 4px; }
 .topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .link { background: none; border: 0; padding: 4px 0; color: var(--muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
 
-/* Login */
-.login { display: flex; flex-direction: column; gap: 18px; padding-top: 12vh; }
-.login p { margin: 0; color: var(--muted); max-width: 38ch; }
-#gsi-botao { min-height: 44px; }
+/* Login: segue o claro/escuro do aparelho; roxo da marca */
+.login { min-height: calc(100vh - 40px); min-height: calc(100dvh - 40px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: var(--font-display); }
+.login .centro { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 340px; margin: auto; padding: 24px 0; }
+.login .logo { width: min(260px, 74%); height: auto; }
+@media (prefers-color-scheme: dark) { .login .logo { filter: brightness(1.25); } }
+.login h1 { font-family: var(--font-display); font-weight: 300; font-size: 30px; margin: 40px 0 0; }
+.login h1 span, header h1 span { color: var(--brand); }
+.login .sub { margin: 10px 0 0; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--muted); font-weight: 400; max-width: none; }
+.login .entrar { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; margin-top: 36px; }
+#gsi-botao { min-height: 44px; display: flex; justify-content: center; }
+.creditos { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); padding-top: 24px; text-align: center; font-family: var(--font-display); }
+.creditos .fe { font-size: 11px; letter-spacing: .28em; color: var(--brand); }
+.login .msg { width: 100%; text-align: left; }
 .msg { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; background: var(--surface); }
 .msg.erro { border-color: var(--cancel); color: var(--cancel); background: var(--cancel-soft); }
 
@@ -93,7 +105,7 @@ header { display: flex; flex-direction: column; gap: 4px; }
 .bar { display: flex; flex-direction: column; gap: 8px; }
 .filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 500; }
-.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.chip[aria-pressed="true"] { background: var(--brand); color: var(--brand-fg); border-color: var(--brand); }
 .count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .banner { border: 1px dashed var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; color: var(--muted); margin-bottom: 8px; }
 
@@ -144,7 +156,7 @@ header { display: flex; flex-direction: column; gap: 4px; }
 .card.canceled { border-color: var(--cancel); background: color-mix(in srgb, var(--cancel-soft) 55%, var(--surface)); }
 .card.canceled .patient { text-decoration: line-through; text-decoration-thickness: 1px; }
 .item.past .card { opacity: .55; }
-.item.next .card { border-color: var(--fg); border-width: 2px; }
+.item.next .card { border-color: var(--brand); border-width: 2px; }
 .empty { border: 1px dashed var(--line); border-radius: 12px; padding: 24px 16px; text-align: center; color: var(--muted); }
 
 .foot { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
@@ -156,23 +168,32 @@ header { display: flex; flex-direction: column; gap: 4px; }
 <div class="app">
 
   <section id="login" class="login" hidden>
-    <div>
-      <span class="eyebrow">Agenda da clínica</span>
-      <h1>Dr. Orestes Polo</h1>
+    <div class="centro">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="login-logo.png">
+        <img class="logo" src="login-logo-claro.png" alt="Orestes Polo, cirurgião plástico" width="652" height="395">
+      </picture>
+      <h1>Agenda <span>Cirúrgica</span></h1>
+      <p class="sub">Acesso exclusivo para equipe</p>
+      <div class="entrar">
+        <div id="gsi-botao"></div>
+        <div id="login-msg" class="msg" hidden></div>
+      </div>
     </div>
-    <p>Entre com a sua conta Google para ver cirurgias, consultas e retornos.</p>
-    <div id="gsi-botao"></div>
-    <div id="login-msg" class="msg" hidden></div>
+    <div class="creditos">
+      <span>Desenvolvido por M. Santos Soluções</span>
+      <span class="fe">IN GOD WE TRUST</span>
+    </div>
   </section>
 
   <section id="principal" hidden>
     <div class="app">
       <header>
         <div class="topo">
-          <span class="eyebrow">Agenda da clínica</span>
+          <span class="eyebrow">Dr. Orestes Polo</span>
           <button id="sair" class="link" type="button">Sair</button>
         </div>
-        <h1>Dr. Orestes Polo</h1>
+        <h1>Agenda <span>Cirúrgica</span></h1>
         <span class="datehead" id="datehead"></span>
       </header>
 
@@ -206,6 +227,7 @@ header { display: flex; flex-direction: column; gap: 4px; }
           <button id="atualizar" class="link" type="button">Atualizar agora</button>
         </div>
         <span id="atualizado"></span>
+        <div class="creditos"><span>Desenvolvido por M. Santos Soluções</span><span class="fe">IN GOD WE TRUST</span></div>
       </footer>
     </div>
   </section>

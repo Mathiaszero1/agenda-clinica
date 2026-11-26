@@ -36,7 +36,8 @@
   var sessao = null;        // { token, nome, papel }
   var semanaOff = 0;        // 0 = esta semana
   var selecionado = null;   // 'YYYY-MM-DD'
-  var dados = null;         // resposta do servidor para a semana aberta
+  var semanas = {};         // semanas já carregadas, só na memória: 'YYYY-MM-DD' (segunda) -> resposta
+  var dados = null;         // resposta da semana aberta (atalho)
   var filtro = 'todos';
   var abertoId = null;
   var telVisivel = {};
@@ -49,7 +50,7 @@
     try { var s = JSON.parse(localStorage.getItem(CHAVE_SESSAO) || 'null'); return s && s.token ? s : null; } catch (e) { return null; }
   }
   function salvarSessao() { try { localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao)); } catch (e) { /* segue só em memória */ } }
-  function limparSessao() { sessao = null; dados = null; try { localStorage.removeItem(CHAVE_SESSAO); } catch (e) { /* nada */ } }
+  function limparSessao() { sessao = null; dados = null; semanas = {}; try { localStorage.removeItem(CHAVE_SESSAO); } catch (e) { /* nada */ } }
 
   // ---------- Servidor ----------
   function chama(corpo) {
@@ -66,6 +67,8 @@
   }
 
   // ---------- Login ----------
+  function corDaBarra() { /* a cor da barra segue o claro/escuro do aparelho (meta theme-color com media) */ }
+
   function mostraLoginMsg(texto, erro) {
     var m = $('login-msg');
     m.hidden = !texto;
@@ -76,6 +79,7 @@
   function mostrarLogin(mensagem) {
     $('principal').hidden = true;
     $('login').hidden = false;
+    corDaBarra('#140f1f');
     mostraLoginMsg(mensagem || '', !!mensagem);
     if (!configurado()) {
       mostraLoginMsg('O app ainda não foi configurado. Preencha o arquivo config.js, como explica o guia de instalação.', true);
@@ -91,7 +95,7 @@
       if (window.google && google.accounts && google.accounts.id) {
         googleIniciado = true;
         google.accounts.id.initialize({ client_id: CFG.CLIENT_ID, callback: aoReceberCredencial, auto_select: false });
-        google.accounts.id.renderButton($('gsi-botao'), { theme: 'outline', size: 'large', text: 'signin_with', locale: 'pt-BR', width: 280 });
+        google.accounts.id.renderButton($('gsi-botao'), { theme: (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'filled_black' : 'outline', shape: 'pill', size: 'large', text: 'signin_with', locale: 'pt-BR', width: 300 });
       } else if (tentativas++ < 100) {
         setTimeout(espera, 100);
       } else {
@@ -119,6 +123,8 @@
   // ---------- Agenda ----------
   function mostrarPrincipal() {
     $('login').hidden = true;
+    document.documentElement.classList.remove('em-login');
+    corDaBarra('#7a2e3b');
     $('principal').hidden = false;
     $('quem').textContent = (sessao.nome || 'Você') + (sessao.papel === 'admin' ? ' · administrador' : '');
   }
@@ -130,19 +136,42 @@
     s.className = 'msg' + (erro ? ' erro' : '');
   }
 
-  function carregar() {
+  function pedeSemana(off, fresco) {
+    var ini = segunda(off), fim = somaDias(ini, 6);
+    return chama({ acao: 'agenda', token: sessao.token, desde: chave(ini), ate: chave(fim), fresco: !!fresco });
+  }
+
+  function aceitaErroDeSessao(r) {
+    if (ERROS_DE_SESSAO[r.erro]) { limparSessao(); mostrarLogin(ERROS[r.erro]); return true; }
+    return false;
+  }
+
+  // Busca em segundo plano a semana anterior e a seguinte, para a troca de semana ser instantânea.
+  function precarrega() {
+    [semanaOff + 1, semanaOff - 1].forEach(function (off) {
+      var k = chave(segunda(off));
+      if (semanas[k] || !sessao) return;
+      pedeSemana(off, false).then(function (r) {
+        if (r && r.ok && sessao) { semanas[k] = r; }
+      }).catch(function () { /* sem problema: carrega quando a pessoa abrir a semana */ });
+    });
+  }
+
+  function carregar(fresco) {
     if (carregando || !sessao) return;
+    var k = chave(segunda(semanaOff));
+    if (!fresco && semanas[k]) { dados = semanas[k]; render(); precarrega(); return; }
     carregando = true;
-    var ini = segunda(semanaOff), fim = somaDias(ini, 6);
-    if (!dados || dados.desde !== chave(ini)) mostraStatus('Carregando a agenda…', false);
-    chama({ acao: 'agenda', token: sessao.token, desde: chave(ini), ate: chave(fim) }).then(function (r) {
+    if (!semanas[k]) mostraStatus('Carregando a agenda…', false);
+    pedeSemana(semanaOff, fresco).then(function (r) {
       carregando = false;
       if (!r.ok) {
-        if (ERROS_DE_SESSAO[r.erro]) { limparSessao(); mostrarLogin(ERROS[r.erro]); return; }
+        if (aceitaErroDeSessao(r)) return;
         mostraStatus(ERROS[r.erro] || 'Não foi possível carregar a agenda agora.', true);
         return;
       }
-      if (r.desde !== chave(segunda(semanaOff))) return; // o usuário já mudou de semana
+      semanas[r.desde] = r;
+      if (r.desde !== chave(segunda(semanaOff))) return; // a pessoa já mudou de semana
       dados = r;
       ultimaCarga = Date.now();
       sessao.nome = r.nome; sessao.papel = r.papel;
@@ -151,6 +180,7 @@
       mostraStatus('', false);
       $('atualizado').textContent = 'Atualizado às ' + horaLocal(ultimaCarga);
       render();
+      precarrega();
     }).catch(function () {
       carregando = false;
       mostraStatus('Sem conexão com o servidor.' + (dados ? ' Mostrando o que foi carregado às ' + horaLocal(ultimaCarga) + '.' : ''), true);
@@ -308,16 +338,16 @@
     semanaOff = delta === 0 ? 0 : semanaOff + delta;
     selecionado = null;
     abertoId = null;
-    dados = null;
+    dados = semanas[chave(segunda(semanaOff))] || null;
     render();
-    carregar();
+    carregar(false);
   }
 
   // ---------- Eventos ----------
   $('ant').addEventListener('click', function () { mudaSemana(-1); });
   $('prox').addEventListener('click', function () { mudaSemana(1); });
   $('hoje').addEventListener('click', function () { mudaSemana(0); });
-  $('atualizar').addEventListener('click', carregar);
+  $('atualizar').addEventListener('click', function () { carregar(true); });
   $('sair').addEventListener('click', function () {
     limparSessao();
     telVisivel = {}; motivoVisivel = {};
@@ -336,10 +366,10 @@
 
   // Atualiza sozinho ao voltar para o app e a cada 5 minutos com ele aberto
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden && sessao && Date.now() - ultimaCarga > 120000) carregar();
+    if (!document.hidden && sessao && Date.now() - ultimaCarga > 120000) carregar(true);
   });
   setInterval(function () {
-    if (!document.hidden && sessao && Date.now() - ultimaCarga > 300000) carregar();
+    if (!document.hidden && sessao && Date.now() - ultimaCarga > 300000) carregar(true);
   }, 60000);
 
   // ---------- Início ----------
